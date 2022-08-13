@@ -56,7 +56,7 @@ func NewPool(opts ...Option) *Pool {
 		capacity:        10,
 		queueSize:       100,
 		rejectionPolicy: UseCaller,
-		shutdownTimeout: time.Second * 3,
+		shutdownTimeout: time.Second * 5,
 	}
 	for _, opt := range opts {
 		opt(&o)
