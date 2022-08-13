@@ -23,7 +23,7 @@ func main() {
 	select {
 	case <-done:
 		fmt.Println("exit.")
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+		ctx, cancel := context.WithTimeout(context.Background(), pool.shutdownTimeout)
 		defer cancel()
 		pool.Shutdown(ctx)
 	}
@@ -46,11 +46,17 @@ func Policy(policy RejectionPolicy) Option {
 		options.rejectionPolicy = policy
 	}
 }
+func PoolShutdownTimeout(timeout time.Duration) Option {
+	return func(options *Options) {
+		options.shutdownTimeout = timeout
+	}
+}
 func NewPool(opts ...Option) *Pool {
 	o := Options{
 		capacity:        10,
 		queueSize:       100,
 		rejectionPolicy: UseCaller,
+		shutdownTimeout: time.Second * 3,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -62,6 +68,7 @@ func NewPool(opts ...Option) *Pool {
 		queue:           queue,
 		rejectionPolicy: o.rejectionPolicy,
 		stop:            stop,
+		shutdownTimeout: o.shutdownTimeout,
 	}
 	for i := 0; i < o.capacity; i++ {
 		i := i
@@ -90,6 +97,7 @@ type Pool struct {
 	queue           chan task // 任务队列
 	rejectionPolicy RejectionPolicy
 	stop            chan struct{}
+	shutdownTimeout time.Duration
 }
 
 func (p *Pool) Shutdown(ctx context.Context) {
@@ -133,6 +141,7 @@ type Options struct {
 	capacity        int
 	queueSize       int
 	rejectionPolicy RejectionPolicy
+	shutdownTimeout time.Duration
 }
 
 type RejectionPolicy int8
