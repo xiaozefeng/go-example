@@ -94,7 +94,7 @@ type Pool struct {
 
 func (p *Pool) Shutdown(ctx context.Context) {
 	fmt.Println("start shutdown")
-	done := make(chan struct{})
+	done := make(chan struct{}, 1)
 	go func() {
 		for i := 0; i < 10; i++ {
 			p.stop <- struct{}{}
