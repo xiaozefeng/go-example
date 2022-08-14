@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -18,6 +19,7 @@ func main() {
 			time.Sleep(500 * time.Millisecond)
 		})
 	}
+	fmt.Println("numOfGoroutine:", runtime.NumGoroutine())
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT)
 	select {
@@ -27,6 +29,7 @@ func main() {
 		defer cancel()
 		pool.Shutdown(ctx)
 	}
+	fmt.Println("numOfGoroutine:", runtime.NumGoroutine())
 }
 
 func QueueSize(queueSize int) Option {
