@@ -109,6 +109,7 @@ func (p *Pool) Shutdown(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		fmt.Println("shutdown timeout")
+		return
 	case <-done:
 		fmt.Println("关闭所有后台worker")
 	}
