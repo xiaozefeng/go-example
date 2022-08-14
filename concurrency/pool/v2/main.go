@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	pool := NewPool(Capacity(10), QueueSize(1000), Policy(Discard))
+	pool := NewPool(10, QueueSize(1000), Policy(Discard))
 	for i := 0; i < 1000; i++ {
 		i := i
 		pool.Submit(func() {
@@ -28,14 +28,7 @@ func main() {
 		pool.Shutdown(ctx)
 	}
 }
-func Capacity(capacity int) Option {
-	return func(options *Options) {
-		if capacity < 1 {
-			panic("invalid capacity, too small")
-		}
-		options.capacity = capacity
-	}
-}
+
 func QueueSize(queueSize int) Option {
 	return func(options *Options) {
 		options.queueSize = queueSize
@@ -51,9 +44,11 @@ func PoolShutdownTimeout(timeout time.Duration) Option {
 		options.shutdownTimeout = timeout
 	}
 }
-func NewPool(opts ...Option) *Pool {
+func NewPool(capacity int, opts ...Option) *Pool {
+	if capacity <= 0 {
+		panic("invalid capacity, too small")
+	}
 	o := Options{
-		capacity:        10,
 		queueSize:       100,
 		rejectionPolicy: UseCaller,
 		shutdownTimeout: time.Second * 5,
@@ -70,7 +65,7 @@ func NewPool(opts ...Option) *Pool {
 		stop:            stop,
 		shutdownTimeout: o.shutdownTimeout,
 	}
-	for i := 0; i < o.capacity; i++ {
+	for i := 0; i < capacity; i++ {
 		i := i
 		go work(queue, i, stop)
 	}
@@ -138,7 +133,6 @@ type task func()
 type Option func(*Options)
 
 type Options struct {
-	capacity        int
 	queueSize       int
 	rejectionPolicy RejectionPolicy
 	shutdownTimeout time.Duration
