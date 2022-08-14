@@ -15,7 +15,7 @@ func main() {
 	case res := <-c1:
 		fmt.Println("received from c1: ", res)
 	case <-time.After(time.Second * 1):
-		fmt.Println("received from c1 timeout")
+		fmt.Println("received from c1 leakTimeout")
 
 	}
 	c2 := make(chan string, 1)
@@ -27,7 +27,7 @@ func main() {
 	case res := <-c2:
 		fmt.Println("received from c2: ", res)
 	case <-time.After(time.Second * 3):
-		fmt.Println("received from c2 timeout")
+		fmt.Println("received from c2 leakTimeout")
 
 	}
 
