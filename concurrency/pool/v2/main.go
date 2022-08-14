@@ -12,6 +12,7 @@ import (
 
 func main() {
 	pool := NewPool(10, QueueSize(1000), Policy(Discard))
+	pool.Start()
 	for i := 0; i < 1000; i++ {
 		i := i
 		pool.Submit(func() {
@@ -67,12 +68,16 @@ func NewPool(capacity int, opts ...Option) *Pool {
 		rejectionPolicy: o.rejectionPolicy,
 		stop:            stop,
 		shutdownTimeout: o.shutdownTimeout,
-	}
-	for i := 0; i < capacity; i++ {
-		i := i
-		go work(queue, i, stop)
+		capacity:        capacity,
 	}
 	return p
+}
+
+func (p *Pool) Start() {
+	for i := 0; i < p.capacity; i++ {
+		i := i
+		go work(p.queue, i, p.stop)
+	}
 }
 
 func work(queue chan task, i int, stop chan struct{}) {
@@ -102,7 +107,7 @@ func (p *Pool) Shutdown(ctx context.Context) {
 	fmt.Println("start shutdown")
 	done := make(chan struct{}, 1)
 	go func() {
-		for i := 0; i < 10; i++ {
+		for i := 0; i < p.capacity; i++ {
 			p.stop <- struct{}{}
 			fmt.Println("send stop signal successful")
 		}
