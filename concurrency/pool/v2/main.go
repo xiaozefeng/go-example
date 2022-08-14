@@ -11,7 +11,12 @@ import (
 )
 
 func main() {
-	pool := NewPool(10, QueueSize(1000), Policy(Discard))
+	fmt.Println("numOfGoroutine:", runtime.NumGoroutine())
+	pool := NewPool(10,
+		QueueSize(1000),
+		Policy(Discard),
+		PoolShutdownWaitTime(time.Second*2),
+	)
 	pool.Start()
 	for i := 0; i < 1000; i++ {
 		i := i
@@ -48,14 +53,20 @@ func PoolShutdownTimeout(timeout time.Duration) Option {
 		options.shutdownTimeout = timeout
 	}
 }
+func PoolShutdownWaitTime(timeout time.Duration) Option {
+	return func(options *Options) {
+		options.shutdownWaitTime = timeout
+	}
+}
 func NewPool(capacity int, opts ...Option) *Pool {
 	if capacity <= 0 {
 		panic("invalid capacity, too small")
 	}
 	o := Options{
-		queueSize:       100,
-		rejectionPolicy: UseCaller,
-		shutdownTimeout: time.Second * 5,
+		queueSize:        100,
+		rejectionPolicy:  UseCaller,
+		shutdownTimeout:  time.Second * 5,
+		shutdownWaitTime: 2 * time.Second,
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -64,11 +75,12 @@ func NewPool(capacity int, opts ...Option) *Pool {
 	queue := make(chan task, o.queueSize)
 	stop := make(chan struct{})
 	p := &Pool{
-		queue:           queue,
-		rejectionPolicy: o.rejectionPolicy,
-		stop:            stop,
-		shutdownTimeout: o.shutdownTimeout,
-		capacity:        capacity,
+		queue:            queue,
+		rejectionPolicy:  o.rejectionPolicy,
+		stop:             stop,
+		shutdownTimeout:  o.shutdownTimeout,
+		shutdownWaitTime: o.shutdownWaitTime,
+		capacity:         capacity,
 	}
 	return p
 }
@@ -84,7 +96,11 @@ func work(queue chan task, i int, stop chan struct{}) {
 	func() {
 		for {
 			select {
-			case t := <-queue:
+			case t, ok := <-queue:
+				if !ok {
+					fmt.Printf("workder:%d 后台任务退出\n", i)
+					return
+				}
 				fmt.Printf("worker:%d,从队列捞到任务\n", i)
 				t()
 			case <-stop:
@@ -96,11 +112,12 @@ func work(queue chan task, i int, stop chan struct{}) {
 }
 
 type Pool struct {
-	capacity        int
-	queue           chan task // 任务队列
-	rejectionPolicy RejectionPolicy
-	stop            chan struct{}
-	shutdownTimeout time.Duration
+	capacity         int
+	queue            chan task // 任务队列
+	rejectionPolicy  RejectionPolicy
+	stop             chan struct{}
+	shutdownTimeout  time.Duration
+	shutdownWaitTime time.Duration
 }
 
 func (p *Pool) Shutdown(ctx context.Context) {
@@ -111,6 +128,7 @@ func (p *Pool) Shutdown(ctx context.Context) {
 			p.stop <- struct{}{}
 			fmt.Println("send stop signal successful")
 		}
+		close(p.queue)
 		done <- struct{}{}
 		fmt.Println("send done signal")
 	}()
@@ -120,6 +138,7 @@ func (p *Pool) Shutdown(ctx context.Context) {
 		return
 	case <-done:
 		fmt.Println("关闭所有后台worker")
+		time.Sleep(p.shutdownWaitTime)
 	}
 }
 func (p *Pool) Submit(task task) {
@@ -142,9 +161,10 @@ type task func()
 type Option func(*Options)
 
 type Options struct {
-	queueSize       int
-	rejectionPolicy RejectionPolicy
-	shutdownTimeout time.Duration
+	queueSize        int
+	rejectionPolicy  RejectionPolicy
+	shutdownTimeout  time.Duration
+	shutdownWaitTime time.Duration
 }
 
 type RejectionPolicy int8
