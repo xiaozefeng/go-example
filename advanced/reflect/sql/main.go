@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -55,7 +54,7 @@ func genInsertSQL(entity interface{}) (string, error) {
 			columns = append(columns, Camel2Case(t.Field(i).Name))
 			switch v.Field(i).Kind() {
 			case reflect.String:
-				values = append(values, v.Field(i).String())
+				values = append(values, fmt.Sprintf("'%s'", v.Field(i).String()))
 			case reflect.Int:
 				values = append(values, fmt.Sprintf("%d", v.Field(i).Int()))
 			}
@@ -129,19 +128,14 @@ func (b *Buffer) Append(i interface{}) *Buffer {
 	case string:
 		b.append(val)
 	case []byte:
-		b.Write(val)
+		_, _ = b.Write(val)
 	case rune:
-		b.WriteRune(val)
+		_, _ = b.WriteRune(val)
 	}
 	return b
 }
 
 func (b *Buffer) append(s string) *Buffer {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println("*****内存不够了！******")
-		}
-	}()
-	b.WriteString(s)
+	_, _ = b.WriteString(s)
 	return b
 }
