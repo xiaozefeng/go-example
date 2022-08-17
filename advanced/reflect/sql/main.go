@@ -25,7 +25,7 @@ func main() {
 		userId:      1,
 		orderStatus: 1,
 	}
-	sql, err := genInsertSQL(order)
+	sql, err := genInsertSQL(&order)
 	if err != nil {
 		panic(err)
 	}
@@ -39,28 +39,26 @@ func genInsertSQL(entity interface{}) (string, error) {
 		return "", errors.New("must not nil input")
 	}
 	t := reflect.TypeOf(entity)
-	var kind = t.Kind()
-	if kind == reflect.Ptr {
-		kind = t.Elem().Kind()
+	v := reflect.ValueOf(entity)
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		v = v.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return "", errors.New("not struct")
 	}
 	var table = t.Name()
 	var columns []string
 	var values []string
 
-	switch kind {
-	case reflect.Struct:
-		v := reflect.ValueOf(entity)
-		for i := 0; i < v.NumField(); i++ {
-			columns = append(columns, Camel2Case(t.Field(i).Name))
-			switch v.Field(i).Kind() {
-			case reflect.String:
-				values = append(values, fmt.Sprintf("'%s'", v.Field(i).String()))
-			case reflect.Int:
-				values = append(values, fmt.Sprintf("%d", v.Field(i).Int()))
-			}
+	for i := 0; i < v.NumField(); i++ {
+		columns = append(columns, Camel2Case(t.Field(i).Name))
+		switch v.Field(i).Kind() {
+		case reflect.String:
+			values = append(values, fmt.Sprintf("'%s'", v.Field(i).String()))
+		case reflect.Int:
+			values = append(values, fmt.Sprintf("%d", v.Field(i).Int()))
 		}
-	default:
-		fmt.Println("unknown kind")
 	}
 	var insert = Insert{
 		table:   table,
