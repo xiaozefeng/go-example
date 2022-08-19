@@ -14,7 +14,7 @@ import (
 )
 
 type (
-	// TestingT is the interface that is shared between
+	// TestingT is the interface.go that is shared between
 	// testing.T and testing.B and used by enttest.
 	TestingT interface {
 		FailNow()
