@@ -7,6 +7,8 @@ import (
 
 func main() {
 	fmt.Println(unsafe.Sizeof(T{}))
+	var c chan string
+	fmt.Println(unsafe.Sizeof(c))
 }
 
 type T struct {
@@ -14,4 +16,5 @@ type T struct {
 	b int64
 	c int16
 	d int8
+	e chan int
 }
