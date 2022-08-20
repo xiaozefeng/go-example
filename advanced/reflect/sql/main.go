@@ -81,7 +81,7 @@ func (i *Insert) Build() (string, error) {
 	columnSQL := strings.Join(columns, `,`)
 	valuesSQL := strings.Join(i.values, `,`)
 
-	return fmt.Sprintf("insert %s(%s) values(%s)", Camel2Case(i.table), columnSQL, valuesSQL), nil
+	return fmt.Sprintf("INSERT INTO %s(%s) VALUES(%s)", Camel2Case(i.table), columnSQL, valuesSQL), nil
 }
 
 func Camel2Case(name string) string {
