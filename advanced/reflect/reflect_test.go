@@ -401,3 +401,12 @@ func TestIterateRangeAble(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkReflectGetField(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := getFieldVal(&User{Name: "mickey"}, "Name")
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
