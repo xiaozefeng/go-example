@@ -35,7 +35,7 @@ func main() {
 }
 
 func handleRequest(conn net.Conn) {
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 0, 1024)
 	_, err := conn.Read(buffer)
 	if err != nil {
 		if err != io.EOF {
