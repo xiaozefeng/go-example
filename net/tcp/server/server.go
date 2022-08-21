@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"net"
-	"time"
 )
 
 // usage
@@ -38,11 +38,12 @@ func handleRequest(conn net.Conn) {
 	buffer := make([]byte, 1024)
 	_, err := conn.Read(buffer)
 	if err != nil {
-		log.Println("handle conn ,err:", err)
+		if err != io.EOF {
+			log.Println("handle conn ,err:", err)
+		}
 	}
 	log.Printf("request: %s\n", buffer)
-	now := time.Now().Format("2006-01-02 15:04:05")
-	conn.Write([]byte("Hi back\n"))
-	conn.Write([]byte(now))
+	//now := time.Now().Format("2006-01-02 15:04:05")
+	conn.Write([]byte("HTTP/1.1 200 OK\n"))
 	conn.Close()
 }

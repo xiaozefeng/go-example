@@ -15,6 +15,7 @@ type User struct {
 
 type FieldMeta struct {
 	offset uintptr
+	typ    reflect.Type
 }
 
 type Accessor struct {
@@ -23,27 +24,35 @@ type Accessor struct {
 }
 
 func (a *Accessor) GetIntField(fieldName string) (int, error) {
-	ptr, err := a.getFieldPoint(fieldName)
+	ptr, _, err := a.getFieldPoint(fieldName)
 	if err != nil {
 		return 0, err
 	}
 	return *(*int)(ptr), nil
 }
+func (a *Accessor) GetField(fieldName string) (any, error) {
+	ptr, f, err := a.getFieldPoint(fieldName)
+	if err != nil {
+		return 0, err
+	}
+	result := reflect.NewAt(f.typ, ptr)
+	return result.Interface(), nil
+}
 
-func (a *Accessor) getFieldPoint(fieldName string) (unsafe.Pointer, error) {
+func (a *Accessor) getFieldPoint(fieldName string) (unsafe.Pointer, FieldMeta, error) {
 	f, ok := a.fields[fieldName]
 	if !ok {
-		return nil, FieldNoFoundErr
+		return nil, f, FieldNoFoundErr
 	}
 	ptr := unsafe.Pointer(uintptr(a.targetAddr) + f.offset)
 	if ptr == nil {
-		return nil, ErrInvalidAddress(fieldName)
+		return nil, f, ErrInvalidAddress(fieldName)
 	}
-	return ptr, nil
+	return ptr, f, nil
 }
 
 func (a *Accessor) GetStringField(fieldName string) (string, error) {
-	ptr, err := a.getFieldPoint(fieldName)
+	ptr, _, err := a.getFieldPoint(fieldName)
 	if err != nil {
 		return "", err
 	}
@@ -51,7 +60,7 @@ func (a *Accessor) GetStringField(fieldName string) (string, error) {
 }
 
 func (a *Accessor) SetInt32Field(fieldName string, val int32) error {
-	ptr, err := a.getFieldPoint(fieldName)
+	ptr, _, err := a.getFieldPoint(fieldName)
 	if err != nil {
 		return err
 	}
@@ -60,11 +69,23 @@ func (a *Accessor) SetInt32Field(fieldName string, val int32) error {
 }
 
 func (a *Accessor) SetStringField(fieldName string, val string) error {
-	ptr, err := a.getFieldPoint(fieldName)
+	ptr, _, err := a.getFieldPoint(fieldName)
 	if err != nil {
 		return err
 	}
 	*(*string)(ptr) = val
+	return nil
+}
+
+func (a *Accessor) SetField(fieldName string, val any) error {
+	ptr, f, err := a.getFieldPoint(fieldName)
+	if err != nil {
+		return err
+	}
+	res := reflect.NewAt(f.typ, ptr)
+	if res.CanSet() {
+		res.Set(reflect.ValueOf(val))
+	}
 	return nil
 }
 
@@ -98,7 +119,7 @@ func NewAccessor(target any) (*Accessor, error) {
 	fields := make(map[string]FieldMeta, numField)
 	for i := 0; i < numField; i++ {
 		f := typeOf.Field(i)
-		fields[f.Name] = FieldMeta{offset: f.Offset}
+		fields[f.Name] = FieldMeta{offset: f.Offset, typ: f.Type}
 	}
 	return &Accessor{
 		fields:     fields,
