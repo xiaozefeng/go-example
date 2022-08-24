@@ -39,3 +39,17 @@ func TestClient(t *testing.T) {
 	}
 
 }
+
+func TestProxy(t *testing.T) {
+	userService, err := NewProxy(&UserService{})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	resp, err := userService.Login("name", "jack")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("resp:", resp)
+
+}
