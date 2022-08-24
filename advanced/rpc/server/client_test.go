@@ -23,17 +23,19 @@ func TestClient(t *testing.T) {
 		Len:      int32(len(data)),
 		Data:     data,
 	}
-	buf := new(bytes.Buffer)
-	err = p.Pack(buf)
-	if err != nil {
-		t.Error(err)
+	for i := 0; i < 3; i++ {
+		buf := new(bytes.Buffer)
+		err = p.Pack(buf)
+		if err != nil {
+			t.Fatal(err)
+		}
+		conn.Write(buf.Bytes())
+		r := &Package{}
+		err = r.Unpack(conn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("resp:", r)
 	}
-	conn.Write(buf.Bytes())
 
-	r := &Package{}
-	err = r.Unpack(conn)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("resp:", r)
 }

@@ -66,6 +66,9 @@ func (e *errWrapper) Read(p []byte) (int, error) {
 func (p *Package) Unpack(reader io.Reader) error {
 	r := &errWrapper{Reader: reader}
 	r.err = binary.Read(r, binary.BigEndian, &p.MagicNum)
+	if p.MagicNum != X0001 {
+		return errors.New("not my magic number")
+	}
 	r.err = binary.Read(r, binary.BigEndian, &p.Version)
 	r.err = binary.Read(r, binary.BigEndian, &p.Alg)
 	r.err = binary.Read(r, binary.BigEndian, &p.Order)
@@ -107,35 +110,39 @@ func main() {
 }
 
 func handleConn(conn net.Conn) {
-	pkg, err := DecodePackage(conn)
-	if err != nil {
-		log.Println("decode pkg error:", err)
-		return
-	}
-	log.Printf("%+v", pkg)
-	switch pkg.Order {
-	case Login:
-		resp, err := login(pkg.Alg, pkg.Data)
+	defer conn.Close()
+	for i := 0; i < 3; i++ {
+
+		pkg, err := DecodePackage(conn)
 		if err != nil {
-			log.Println("process login err", err)
+			log.Println("decode pkg error:", err)
 			return
 		}
-		b, err := json.Marshal(resp)
-		if err != nil {
-			log.Println("process login resp err", err)
-			return
+		log.Printf("%+v", pkg)
+		switch pkg.Order {
+		case Login:
+			resp, err := login(pkg.Alg, pkg.Data)
+			if err != nil {
+				log.Println("process login err", err)
+				return
+			}
+			b, err := json.Marshal(resp)
+			if err != nil {
+				log.Println("process login resp err", err)
+				return
+			}
+			pkg.Len = int32(len(b))
+			pkg.Data = b
+			buf := new(bytes.Buffer)
+			err = pkg.Pack(buf)
+			if err != nil {
+				log.Println("package login resp error", err)
+				return
+			}
+			conn.Write(buf.Bytes())
+		default:
+			log.Println("unknown order: ", pkg.Order)
 		}
-		pkg.Len = int32(len(b))
-		pkg.Data = b
-		buf := new(bytes.Buffer)
-		err = pkg.Pack(buf)
-		if err != nil {
-			log.Println("package login resp error", err)
-			return
-		}
-		conn.Write(buf.Bytes())
-	default:
-		log.Println("unknown order: ", pkg.Order)
 	}
 }
 
