@@ -17,6 +17,7 @@ require (
 
 require (
 	ariga.io/atlas v0.4.3-0.20220711120113-a190b01c6ef9 // indirect
+	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/agext/levenshtein v1.2.1 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

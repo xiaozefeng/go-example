@@ -3,6 +3,7 @@ ariga.io/atlas v0.4.3-0.20220711120113-a190b01c6ef9/go.mod h1:ofVetkJqlaWle3mvYm
 entgo.io/ent v0.11.0 h1:4G5GKmXOpHnIbWIkY2nZvNmuXmHpKWC4SYV1bqfoyZY=
 entgo.io/ent v0.11.0/go.mod h1:Q8cDTupeHjWoIo0K8NyTyV0B9FVrFNSM9AnwnLt22KQ=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
+github.com/DATA-DOG/go-sqlmock v1.5.0/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/agext/levenshtein v1.2.1 h1:QmvMAjj2aEICytGiWzmxoE0x2KZvE0fvmqMOfy2tjT8=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
 github.com/apparentlymart/go-dump v0.0.0-20180507223929-23540a00eaa3/go.mod h1:oL81AME2rN47vu18xqj1S1jPIPuN7afo62yKTNn3XMM=
