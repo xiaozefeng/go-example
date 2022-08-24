@@ -14,7 +14,7 @@ import (
 
 // X0001 MagicNum
 const (
-	X0001 = 114301
+	X0001 = 0x114301
 )
 
 // Version

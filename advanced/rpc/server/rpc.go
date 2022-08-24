@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"net"
 	"reflect"
-	"unsafe"
 )
 
 type UserService struct {
-	Login func(username string, password string) (LoginResp, error)
+	Login func(*LoginParam) (*LoginResp, error)
 }
 
 func NewProxy[T any](target T) (T, error) {
@@ -37,33 +36,44 @@ func NewProxy[T any](target T) (T, error) {
 			//	funcOuts = append(funcOuts, reflect.Zero(field.Type.Out(i)))
 			//}
 			numIn := field.Type.NumIn()
+			for i := 0; i < numIn; i++ {
+				t2 := f.Type()
+				println(t2.In(i).Name())
+				println(t2.In(i).String())
+			}
 			makeFunc := reflect.MakeFunc(field.Type, func(args []reflect.Value) []reflect.Value {
-				ps := make(map[string]any)
-				for i := 0; i < numIn; i++ {
-					val := args[i]
-					ps[val.String()] = val.Interface()
-				}
-				b, err := json.Marshal(ps)
-				if err != nil {
-					fmt.Println("marshal error:", err)
+				if len(args) > 0 {
+					param := args[0].Elem().Interface()
+					b, err := json.Marshal(param)
+					if err != nil {
+						fmt.Println("marshal error:", err)
+						return funcOuts
+					}
+					client := NewClient("tcp", ":9090")
+					bs, err := client.Call(b)
+					if err != nil {
+						fmt.Println("call rpc error:", err)
+						return funcOuts
+					}
+					for i := 0; i < numOut; i++ {
+						outField := field.Type.Out(i)
+						switch {
+						case outField.Kind() == reflect.Ptr || outField.Kind() == reflect.Struct:
+							val := reflect.New(field.Type.Out(i))
+							err = json.Unmarshal(bs, val.Interface())
+							if err != nil {
+								fmt.Println("unmarshal error:", err)
+								return funcOuts
+							}
+							funcOuts = append(funcOuts, val.Elem())
+						case outField.Implements(reflect.TypeOf(new(error)).Elem()):
+							//还没有找到怎么判断是否Error的方法
+							//default:
+							funcOuts = append(funcOuts, reflect.ValueOf(&err).Elem())
+						}
+					}
 					return funcOuts
 				}
-				client := NewClient("tcp", ":9090")
-				bs, err := client.Call(b)
-				if err != nil {
-					fmt.Println("call rpc error:", err)
-					return funcOuts
-				}
-				var result any
-				err = json.Unmarshal(bs, &result)
-				if err != nil {
-					fmt.Println("unmarshal error:", err)
-					return funcOuts
-				}
-				fmt.Println("result:", result)
-				out1 := reflect.NewAt(field.Type.Out(0), unsafe.Pointer(&result))
-				funcOuts = append(funcOuts, out1)
-				funcOuts = append(funcOuts, reflect.ValueOf(err))
 				return funcOuts
 			})
 			valueOf.Field(i).Set(makeFunc)

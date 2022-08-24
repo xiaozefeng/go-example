@@ -14,7 +14,7 @@ func TestClient(t *testing.T) {
 	}
 	defer conn.Close()
 
-	data := []byte("{\"username\":\"mickey\", \"password\":\"112w35235\"}")
+	data := []byte("{\"username\":\"mickey\",\"password\":\"112w35235\"}")
 	p := &Package{
 		MagicNum: X0001,
 		Version:  V1,
@@ -46,10 +46,12 @@ func TestProxy(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	resp, err := userService.Login("name", "jack")
+	resp, err := userService.Login(&LoginParam{
+		Username: "mickey",
+		Password: "123456",
+	})
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Println("resp:", resp)
-
 }
