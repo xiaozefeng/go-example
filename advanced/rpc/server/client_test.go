@@ -23,7 +23,7 @@ func TestClient(t *testing.T) {
 		Len:      int32(len(data)),
 		Data:     data,
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 10; i++ {
 		buf := new(bytes.Buffer)
 		err = p.Pack(buf)
 		if err != nil {

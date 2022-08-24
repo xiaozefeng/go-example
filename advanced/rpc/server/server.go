@@ -111,7 +111,7 @@ func main() {
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
-	for i := 0; i < 3; i++ {
+	for {
 
 		pkg, err := DecodePackage(conn)
 		if err != nil {
