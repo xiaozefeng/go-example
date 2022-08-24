@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -45,17 +46,24 @@ func TestSelect(t *testing.T) {
 		t.Error(err)
 	}
 	defer db.Close()
+	exceptedPosts := []*post{
+		{
+			1, "title1", "content1",
+		},
+	}
+
 	rows := sqlmock.NewRows([]string{"id", "title", "content"}).
 		AddRow(1, "title1", "content1")
 	//AddRow(2, "title2", "content2")
 
 	mock.ExpectQuery("^SELECT (.)+ FROM tb_post$").WillReturnRows(rows)
 
-	_, err = queryPost(db)
+	posts, err := queryPost(db)
 	if err != nil {
-
 		t.Error(err)
 	}
+
+	assert.EqualValues(t, exceptedPosts, posts)
 	err = mock.ExpectationsWereMet()
 	if err != nil {
 		t.Error(err)
@@ -81,7 +89,7 @@ func queryPost(db *sql.DB) ([]*post, error) {
 		if err := rows.Scan(&p.ID, &p.Title, &p.Body); err != nil {
 			return nil, err
 		}
-		//posts = append(posts, p)
+		posts = append(posts, p)
 	}
 	if rows.Err() != nil {
 		return nil, err
