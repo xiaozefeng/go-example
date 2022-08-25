@@ -66,6 +66,9 @@ func (e *errWrapper) Read(p []byte) (int, error) {
 func (p *Package) Unpack(reader io.Reader) error {
 	r := &errWrapper{Reader: reader}
 	r.err = binary.Read(r, binary.BigEndian, &p.MagicNum)
+	if r.err != nil {
+		return r.err
+	}
 	if p.MagicNum != X0001 {
 		return errors.New("not my magic number")
 	}
@@ -112,9 +115,11 @@ func main() {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 	for {
-
 		pkg, err := DecodePackage(conn)
 		if err != nil {
+			if err == io.EOF || err == net.ErrClosed {
+				return
+			}
 			log.Println("decode pkg error:", err)
 			return
 		}

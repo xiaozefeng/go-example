@@ -32,15 +32,6 @@ func NewProxy[T any](target T) (T, error) {
 		if f.Kind() == reflect.Func && f.IsValid() && f.CanSet() {
 			numOut := field.Type.NumOut()
 			funcOuts := make([]reflect.Value, 0, numOut)
-			//for i := 0; i < numOut; i++ {
-			//	funcOuts = append(funcOuts, reflect.Zero(field.Type.Out(i)))
-			//}
-			numIn := field.Type.NumIn()
-			for i := 0; i < numIn; i++ {
-				t2 := f.Type()
-				println(t2.In(i).Name())
-				println(t2.In(i).String())
-			}
 			makeFunc := reflect.MakeFunc(field.Type, func(args []reflect.Value) []reflect.Value {
 				if len(args) > 0 {
 					param := args[0].Elem().Interface()
