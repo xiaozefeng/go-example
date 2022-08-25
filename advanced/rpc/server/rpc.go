@@ -31,6 +31,14 @@ func NewProxy[T any](target T) (T, error) {
 		f := valueOf.Field(i)
 		if f.Kind() == reflect.Func && f.IsValid() && f.CanSet() {
 			numOut := field.Type.NumOut()
+			numIn := field.Type.NumIn()
+			if numIn < 1 {
+				return t, errors.New("must have 1 parameter")
+			}
+			if numOut != 1 && numOut != 2 {
+				return t, errors.New("must have 1 or 2 return")
+			}
+
 			funcOuts := make([]reflect.Value, 0, numOut)
 			makeFunc := reflect.MakeFunc(field.Type, func(args []reflect.Value) []reflect.Value {
 				if len(args) > 0 {
