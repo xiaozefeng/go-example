@@ -49,47 +49,55 @@ func (p *Package) String() string {
 		p.MagicNum, p.Version, p.Alg, p.Order, p.Len, p.Data)
 }
 
-type errWrapper struct {
-	io.Reader
+type Reader struct {
+	r   io.Reader
 	err error
 }
 
-func (e *errWrapper) Read(p []byte) (int, error) {
-	if e.err != nil {
-		return 0, e.err
+func (r *Reader) read(data any) {
+	if r.err == nil {
+		r.err = binary.Read(r.r, binary.BigEndian, data)
 	}
-	var n int
-	n, e.err = e.Reader.Read(p)
-	return n, e.err
 }
 
-func (p *Package) Unpack(reader io.Reader) error {
-	r := &errWrapper{Reader: reader}
-	r.err = binary.Read(r, binary.BigEndian, &p.MagicNum)
+func (p *Package) Unpack(input io.Reader) error {
+	r := &Reader{r: input}
+	r.read(&p.MagicNum)
+	r.read(&p.Version)
+	r.read(&p.Alg)
+	r.read(&p.Order)
+	r.read(&p.Len)
+	p.Data = make([]byte, p.Len)
+	r.read(&p.Data)
 	if r.err != nil {
 		return r.err
 	}
 	if p.MagicNum != X0001 {
 		return errors.New("not my magic number")
 	}
-	r.err = binary.Read(r, binary.BigEndian, &p.Version)
-	r.err = binary.Read(r, binary.BigEndian, &p.Alg)
-	r.err = binary.Read(r, binary.BigEndian, &p.Order)
-	r.err = binary.Read(r, binary.BigEndian, &p.Len)
-	p.Data = make([]byte, p.Len)
-	r.err = binary.Read(r, binary.BigEndian, &p.Data)
 	return r.err
 }
 
+type Writer struct {
+	w   io.Writer
+	err error
+}
+
+func (w *Writer) write(data any) {
+	if w.err == nil {
+		w.err = binary.Write(w.w, binary.BigEndian, data)
+	}
+}
+
 func (p *Package) Pack(writer io.Writer) error {
-	var err error
-	err = binary.Write(writer, binary.BigEndian, &p.MagicNum)
-	err = binary.Write(writer, binary.BigEndian, &p.Version)
-	err = binary.Write(writer, binary.BigEndian, &p.Alg)
-	err = binary.Write(writer, binary.BigEndian, &p.Order)
-	err = binary.Write(writer, binary.BigEndian, &p.Len)
-	err = binary.Write(writer, binary.BigEndian, &p.Data)
-	return err
+	w := Writer{w: writer}
+	w.write(&p.MagicNum)
+	w.write(&p.Version)
+	w.write(&p.Alg)
+	w.write(&p.Order)
+	w.write(&p.Len)
+	w.write(&p.Data)
+	return w.err
 }
 
 var addr string
