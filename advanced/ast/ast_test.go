@@ -125,3 +125,25 @@ func (p *printVisitor) Visit(node ast.Node) (w ast.Visitor) {
 	}
 	ast.Walk(&printVisitor{}, f)
 }
+
+func TestAnnotation(t *testing.T) {
+	var src = `
+// annotation go through the source code and extra the annotation
+// @author Deng Ming
+// @date 2022/04/02
+package annotation
+
+`
+	fileSet := token.NewFileSet()
+	f, err := parser.ParseFile(fileSet, "src.go", src, parser.ParseComments)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	visitor := &annotationVisitor{}
+	ast.Walk(visitor, f)
+
+	for k, v := range visitor.Annotations {
+		fmt.Printf("%s: %s\n", k, v)
+	}
+}
