@@ -7,6 +7,10 @@ import (
 
 func Test(t *testing.T) {
 	s := NewServer()
+	b := &AccessLogBuilder{}
+	s.Use(RepeatBody(), b.LogFunc(func(content string) {
+		fmt.Println(content)
+	}).Build())
 	s.Get("/user/profile", func(c *Context) {
 		_ = c.WriteString("match /userprofile\n")
 	})
@@ -21,7 +25,7 @@ func Test(t *testing.T) {
 	})
 
 	g := s.Group("/v1/product")
-	g.Get("/list", func(ctx *Context) {
+	g.Post("/list", func(ctx *Context) {
 		_ = ctx.WriteString("match /v1/product/list\n")
 	})
 	err := s.Start(":8080")
