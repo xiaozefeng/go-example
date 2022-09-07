@@ -2,7 +2,6 @@ package web
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 )
 
@@ -22,7 +21,7 @@ func Test(t *testing.T) {
 	})
 
 	g := s.Group("/v1/product")
-	g.AddRoute(http.MethodGet, "/list", func(ctx *Context) {
+	g.Get("/list", func(ctx *Context) {
 		_ = ctx.WriteString("match /v1/product/list\n")
 	})
 	err := s.Start(":8080")

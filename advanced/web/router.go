@@ -5,10 +5,6 @@ import (
 	"strings"
 )
 
-var (
-	_validMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "CONNECT", "OPTIONS", "TRACE"}
-)
-
 type router struct {
 	trees map[string]*node
 }
@@ -28,17 +24,6 @@ func (r *router) addRoute(method, path string, handler HandleFunc) {
 
 	if path != "/" && path[len(path)-1] == '/' {
 		panic("path 不能以 / 结尾")
-	}
-
-	// 校验 method 是不是http method
-	var valid bool
-	for _, validMethod := range _validMethods {
-		if method == validMethod {
-			valid = true
-		}
-	}
-	if !valid {
-		panic("不支持的 http method")
 	}
 
 	root, ok := r.trees[method]

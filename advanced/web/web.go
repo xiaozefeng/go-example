@@ -25,7 +25,7 @@ type Server interface {
 
 	Start(addr string) error
 
-	AddRoute(method, path string, handler HandleFunc)
+	addRoute(method, path string, handler HandleFunc)
 }
 
 type Group struct {
@@ -33,8 +33,14 @@ type Group struct {
 	s      Server
 }
 
-func (g *Group) AddRoute(method, path string, handler HandleFunc) {
-	g.s.AddRoute(method, g.prefix+path, handler)
+func (g *Group) Get(path string, handler HandleFunc) {
+	g.s.addRoute(http.MethodGet, g.prefix+path, handler)
+}
+func (g *Group) Post(path string, handler HandleFunc) {
+	g.s.addRoute(http.MethodPost, g.prefix+path, handler)
+}
+func (g *Group) Put(path string, handler HandleFunc) {
+	g.s.addRoute(http.MethodPut, g.prefix+path, handler)
 }
 
 func NewServer() *MyServer {
@@ -55,7 +61,7 @@ func (m *MyServer) Start(addr string) error {
 	return http.Serve(listen, m)
 }
 
-func (m *MyServer) AddRoute(method, path string, handler HandleFunc) {
+func (m *MyServer) addRoute(method, path string, handler HandleFunc) {
 	m.router.addRoute(method, path, handler)
 }
 
@@ -78,7 +84,13 @@ func (m *MyServer) serve(ctx *Context) {
 }
 
 func (m *MyServer) Get(path string, handler HandleFunc) {
-	m.AddRoute(http.MethodGet, path, handler)
+	m.addRoute(http.MethodGet, path, handler)
+}
+func (m *MyServer) Post(path string, handler HandleFunc) {
+	m.addRoute(http.MethodPost, path, handler)
+}
+func (m *MyServer) Put(path string, handler HandleFunc) {
+	m.addRoute(http.MethodPut, path, handler)
 }
 
 func (m *MyServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
