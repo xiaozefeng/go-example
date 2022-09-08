@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -12,6 +13,19 @@ type router struct {
 func newRouter() *router {
 	return &router{trees: make(map[string]*node)}
 }
+
+type nodeType int
+
+const (
+	// 静态路由
+	nodeTypeStatic = iota
+	// 正则路由
+	nodeTypeReg
+	// 路径参数路由
+	nodeTypeParam
+	// 通配符路由
+	nodeTypeAny
+)
 
 func (r *router) addRoute(method, path string, handler HandleFunc) {
 	if len(path) == 0 {
@@ -28,7 +42,7 @@ func (r *router) addRoute(method, path string, handler HandleFunc) {
 
 	root, ok := r.trees[method]
 	if !ok {
-		root = &node{path: "/"}
+		root = &node{path: "/", typ: nodeTypeStatic}
 		r.trees[method] = root
 	}
 
@@ -74,7 +88,14 @@ func (r *router) findRoute(method, path string) (*matchInfo, bool) {
 			return nil, false
 		}
 		if matchPathParam {
-			matchInfo.putValue(root.path[1:], seg)
+			if root.typ == nodeTypeParam {
+				matchInfo.putValue(root.paramName, seg)
+			} else if root.typ == nodeTypeReg {
+				subMatch := root.regExpr.FindStringSubmatch(seg)
+				if len(subMatch) > 1 {
+					matchInfo.putValue(root.paramName, subMatch[1])
+				}
+			}
 		}
 	}
 	matchInfo.node = root
@@ -82,6 +103,7 @@ func (r *router) findRoute(method, path string) (*matchInfo, bool) {
 }
 
 type node struct {
+	typ     nodeType
 	path    string
 	handler HandleFunc
 
@@ -92,6 +114,11 @@ type node struct {
 
 	// 路径参数
 	pathNode *node
+	// 正则路由和参数路由都会使用这个字段
+	paramName string
+
+	regNode *node
+	regExpr *regexp.Regexp
 }
 
 type matchInfo struct {
@@ -108,13 +135,24 @@ func (m *matchInfo) putValue(key, val string) {
 
 func (n *node) childOf(path string) (*node, bool, bool) {
 	if n.children == nil {
+		if n.regNode != nil {
+			matched := n.regNode.regExpr.MatchString(path)
+			return n.regNode, true, matched
+		}
 		if n.pathNode != nil {
 			return n.pathNode, true, true
+		}
+		if n.starNode == nil && n.path == "*" {
+			return n, false, true
 		}
 		return n.starNode, false, n.starNode != nil
 	}
 	res, ok := n.children[path]
 	if !ok {
+		if n.regNode != nil {
+			matched := n.regNode.regExpr.MatchString(path)
+			return n.regNode, true, matched
+		}
 		if n.pathNode != nil {
 			return n.pathNode, true, true
 		}
@@ -124,12 +162,33 @@ func (n *node) childOf(path string) (*node, bool, bool) {
 }
 
 func (n *node) createChild(path string) *node {
+	if strings.ContainsAny(path, `()`) {
+		seg := strings.Split(path, `(`)
+		if len(seg) != 2 {
+			panic(fmt.Sprintf("web: 非法路由，不符合正则规范, 必须是 :name(你的正则)的格式 [%s]", path))
+		}
+		var paramName = seg[0][1:]
+		reg := regexp.MustCompile(`(` + seg[1])
+		if n.pathNode != nil {
+			panic(fmt.Sprintf("web: 非法路由，已经有路径参数路由，不允许同时注册通配符路由和参数路由 [%s]", path))
+		}
+		if n.starNode != nil {
+			panic(fmt.Sprintf("web: 非法路由，已有通配符路由。不允许同时注册通配符路由和参数路由 [%s]", path))
+		}
+		if n.regNode != nil {
+			panic(fmt.Sprintf("web: 非法路由, 重复注册正则路由 [%s]", path))
+		}
+		n.regNode = &node{path: path, typ: nodeTypeReg, regExpr: reg, paramName: paramName}
+		//n.regExpr = reg
+		//n.paramName = paramName
+		return n.regNode
+	}
 	if path == "*" {
 		if n.pathNode != nil {
 			panic(fmt.Sprintf("web: 非法路由，已经有路径参数路由，不允许同时注册通配符路由和参数路由 [%s]", path))
 		}
 		if n.starNode == nil {
-			n.starNode = &node{path: path}
+			n.starNode = &node{path: path, typ: nodeTypeAny}
 		}
 		return n.starNode
 	}
@@ -142,7 +201,7 @@ func (n *node) createChild(path string) *node {
 				panic(fmt.Sprintf("web: 路由冲突，参数路由冲突，已有 %s，新注册 %s", n.pathNode.path, path))
 			}
 		} else {
-			n.pathNode = &node{path: path}
+			n.pathNode = &node{path: path, typ: nodeTypeParam, paramName: path[1:]}
 		}
 		return n.pathNode
 	}
@@ -151,7 +210,7 @@ func (n *node) createChild(path string) *node {
 	}
 	child, ok := n.children[path]
 	if !ok {
-		child = &node{path: path}
+		child = &node{path: path, typ: nodeTypeStatic}
 		n.children[path] = child
 	}
 	return child
