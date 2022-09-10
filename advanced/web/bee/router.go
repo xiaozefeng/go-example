@@ -1,4 +1,4 @@
-package web
+package bee
 
 import (
 	"fmt"
@@ -66,6 +66,7 @@ func (r *router) addRoute(method, path string, handler HandleFunc) {
 		panic(fmt.Sprintf("web: 路由冲突[%s]", path))
 	}
 	cur.handler = handler
+	cur.route = path
 }
 
 func (r *router) findRoute(method, path string) (*matchInfo, bool) {
@@ -106,6 +107,7 @@ type node struct {
 	typ     nodeType
 	path    string
 	handler HandleFunc
+	route   string
 
 	children map[string]*node
 

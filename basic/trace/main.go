@@ -43,7 +43,7 @@ func bar() {
 	defer Trace()()
 }
 
-// trace2/trace.go
+// trace2/tracing.go
 var goroutineSpace = []byte("goroutine ")
 
 func curGoroutineID() uint64 {

@@ -1,4 +1,4 @@
-package web
+package bee
 
 import "net/http"
 
