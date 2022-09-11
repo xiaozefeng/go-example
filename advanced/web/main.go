@@ -118,6 +118,15 @@ func main() {
 		panic("闲着没事 panic")
 	})
 
+	s.Get("/md", func(ctx *bee.Context) {
+		_ = ctx.WriteString("我是md路由\n")
+	}, func(next bee.HandleFunc) bee.HandleFunc {
+		return func(ctx *bee.Context) {
+			fmt.Println("我是md的Middleware")
+			next(ctx)
+		}
+	})
+
 	g := s.Group("/v1/product")
 	g.Post("/list", func(ctx *bee.Context) {
 		_ = ctx.WriteString("match /v1/product/list\n")

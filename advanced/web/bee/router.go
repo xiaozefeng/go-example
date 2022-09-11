@@ -27,7 +27,7 @@ const (
 	nodeTypeAny
 )
 
-func (r *router) addRoute(method, path string, handler HandleFunc) {
+func (r *router) addRoute(method, path string, handler HandleFunc, middlewares ...Middleware) {
 	if len(path) == 0 {
 		panic("path 不能为空")
 	}
@@ -67,6 +67,7 @@ func (r *router) addRoute(method, path string, handler HandleFunc) {
 	}
 	cur.handler = handler
 	cur.route = path
+	cur.middlewares = middlewares
 }
 
 func (r *router) findRoute(method, path string) (*matchInfo, bool) {
@@ -100,7 +101,47 @@ func (r *router) findRoute(method, path string) (*matchInfo, bool) {
 		}
 	}
 	matchInfo.node = root
+	matchInfo.middlewares = r.findMiddlewares(root, segs)
 	return matchInfo, true
+}
+
+func (r *router) findMiddlewares(root *node, segs []string) []Middleware {
+	q := []*node{root}
+	result := make([]Middleware, 0, 8)
+	// root 是一个特例，特殊处理一下
+	if len(root.middlewares) > 0 {
+		result = append(result, root.middlewares...)
+	}
+	for _, seg := range segs {
+		var children []*node
+		for _, cur := range q {
+			// 处理参数子节点
+			if cur.pathNode != nil {
+				path := cur.path[:1]
+				if path == seg {
+					result = append(result, cur.pathNode.middlewares...)
+					children = append(children, cur.pathNode)
+				}
+			}
+			// 处理通配符子节点
+			if cur.starNode != nil {
+				result = append(result, cur.starNode.middlewares...)
+				children = append(children, cur.starNode)
+			}
+			// 处理静态路由
+			if len(cur.children) > 0 {
+				n, ok := cur.children[seg]
+				if ok {
+					result = append(result, n.middlewares...)
+					children = append(children, n)
+				}
+			}
+		}
+
+		q = nil
+		q = append(q, children...)
+	}
+	return result
 }
 
 type node struct {
@@ -110,6 +151,8 @@ type node struct {
 	route   string
 
 	children map[string]*node
+	// 路由上的 middleware
+	middlewares []Middleware
 
 	// 通配符匹配
 	starNode *node
@@ -124,8 +167,9 @@ type node struct {
 }
 
 type matchInfo struct {
-	node       *node
-	pathParams map[string]string
+	node        *node
+	pathParams  map[string]string
+	middlewares []Middleware
 }
 
 func (m *matchInfo) putValue(key, val string) {

@@ -13,7 +13,7 @@ type Server interface {
 
 	Start(addr string) error
 
-	addRoute(method, path string, handler HandleFunc)
+	addRoute(method, path string, handler HandleFunc, middlewares ...Middleware)
 }
 
 func NewServer() *HTTPServer {
@@ -39,8 +39,8 @@ func (s *HTTPServer) Use(middlewares ...Middleware) {
 	s.middlewares = append(s.middlewares, middlewares...)
 }
 
-func (s *HTTPServer) addRoute(method, path string, handler HandleFunc) {
-	s.router.addRoute(method, path, handler)
+func (s *HTTPServer) addRoute(method, path string, handler HandleFunc, middlewares ...Middleware) {
+	s.router.addRoute(method, path, handler, middlewares...)
 }
 
 func (s *HTTPServer) Group(prefix string) *Group {
@@ -58,17 +58,24 @@ func (s *HTTPServer) serve(ctx *Context) {
 
 	ctx.PathParams = matchInfo.pathParams
 	ctx.MatchedRoute = matchInfo.node.route
-	matchInfo.node.handler(ctx)
+
+	var root = matchInfo.node.handler
+	if matchInfo.middlewares != nil && len(matchInfo.middlewares) > 0 {
+		for i := len(matchInfo.middlewares) - 1; i >= 0; i-- {
+			root = matchInfo.middlewares[i](root)
+		}
+	}
+	root(ctx)
 }
 
-func (s *HTTPServer) Get(path string, handler HandleFunc) {
-	s.addRoute(http.MethodGet, path, handler)
+func (s *HTTPServer) Get(path string, handler HandleFunc, middlewares ...Middleware) {
+	s.addRoute(http.MethodGet, path, handler, middlewares...)
 }
-func (s *HTTPServer) Post(path string, handler HandleFunc) {
-	s.addRoute(http.MethodPost, path, handler)
+func (s *HTTPServer) Post(path string, handler HandleFunc, middlewares ...Middleware) {
+	s.addRoute(http.MethodPost, path, handler, middlewares...)
 }
-func (s *HTTPServer) Put(path string, handler HandleFunc) {
-	s.addRoute(http.MethodPut, path, handler)
+func (s *HTTPServer) Put(path string, handler HandleFunc, middlewares ...Middleware) {
+	s.addRoute(http.MethodPut, path, handler, middlewares...)
 }
 
 func (s *HTTPServer) flashResp(ctx *Context) {
