@@ -1,8 +1,8 @@
 package prometheus
 
 import (
-	"gitee.com/geektime-geekbang/geektime-go/web/homework2"
 	"github.com/prometheus/client_golang/prometheus"
+	web "github.com/xiaozefeng/go-example/advanced/web/homework2"
 	"strconv"
 	"time"
 )

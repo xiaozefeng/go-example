@@ -1,7 +1,7 @@
 package opentelemetry
 
 import (
-	"gitbub.com/flycash/geekbang-middle-camp/web/homework2"
+	web "github.com/xiaozefeng/go-example/advanced/web/homework2"
 	"go.opentelemetry.io/otel"
 	"testing"
 	"time"
