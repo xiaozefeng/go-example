@@ -29,7 +29,7 @@ func RepeatBody() bee.Middleware {
 }
 
 func initZipKinProvider() error {
-	exporter, err := zipkin.New("http://172.16.112.9:31732/api/v2/spans", zipkin.WithLogger(log.New(os.Stderr, "bee-server", log.Ldate|log.Ltime|log.Llongfile)))
+	exporter, err := zipkin.New("http://uat20:31732/api/v2/spans", zipkin.WithLogger(log.New(os.Stderr, "bee-server", log.Ldate|log.Ltime|log.Llongfile)))
 	if err != nil {
 		return err
 	}
