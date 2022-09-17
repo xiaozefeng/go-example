@@ -138,6 +138,9 @@ func main() {
 	}
 	s.Get("/download", downloader.Handle())
 
+	staticResourceHandler := bee.NewStaticResourceHandler("./advanced/web/testdata/static", "/", bee.WithCacheItem(5*1024*1024, 5))
+	s.Get("/static/:file", staticResourceHandler.Handle())
+
 	s.Get("/md", func(ctx *bee.Context) {
 		_ = ctx.WriteString("我是md路由\n")
 	}, func(next bee.HandleFunc) bee.HandleFunc {

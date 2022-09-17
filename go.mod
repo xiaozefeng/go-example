@@ -8,6 +8,7 @@ require (
 	github.com/fatih/pool v3.0.0+incompatible
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/hashicorp/golang-lru v0.5.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/samber/lo v1.27.0
 	github.com/stretchr/testify v1.8.0

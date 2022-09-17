@@ -27,6 +27,11 @@ func (c *Context) BadRequestErr(msg string) {
 	c.RespData = []byte(msg)
 }
 
+func (c *Context) NotFoundErr(msg string) {
+	c.RespStatusCode = http.StatusNotFound
+	c.RespData = []byte(msg)
+}
+
 func (c *Context) InternalServerErr(msg string) {
 	c.RespStatusCode = http.StatusInternalServerError
 	c.RespData = []byte(msg)
