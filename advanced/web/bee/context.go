@@ -21,3 +21,23 @@ func (c *Context) WriteString(content string) error {
 	c.RespData = []byte(content)
 	return nil
 }
+
+func (c *Context) BadRequestErr(msg string) {
+	c.RespStatusCode = http.StatusBadRequest
+	c.RespData = []byte(msg)
+}
+
+func (c *Context) InternalServerErr(msg string) {
+	c.RespStatusCode = http.StatusInternalServerError
+	c.RespData = []byte(msg)
+}
+
+func (c *Context) QueryValue(key string) (string, error) {
+	params := c.Request.URL.Query()
+	vals, ok := params[key]
+	if !ok || len(vals) == 0 {
+		return "", nil
+	}
+
+	return vals[0], nil
+}

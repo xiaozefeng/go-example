@@ -134,9 +134,9 @@ func main() {
 	s.Post("/upload", fileUploader.Handle())
 
 	downloader := &bee.FileDownloader{
-		Dir: "./advanced/web/testdata/download",
+		Dir: "./testdata/download",
 	}
-	s.Get("/download", downloader.Handle())
+	s.Post("/download", downloader.Handle())
 
 	s.Get("/md", func(ctx *bee.Context) {
 		_ = ctx.WriteString("我是md路由\n")

@@ -3,7 +3,6 @@ package accesslog
 import (
 	"encoding/json"
 	"github.com/xiaozefeng/go-example/advanced/web/bee"
-	"io"
 )
 
 type Builder struct {
@@ -18,12 +17,10 @@ func (b Builder) LogFunc(logFunc func(content string)) Builder {
 func (b Builder) Build() bee.Middleware {
 	return func(next bee.HandleFunc) bee.HandleFunc {
 		return func(ctx *bee.Context) {
-			body := io.NopCloser(ctx.Request.Body)
-			all, err := io.ReadAll(body)
-			if err == nil {
+			defer func() {
 				log := accessLog{
-					Method:     ctx.Request.Method,
-					Body:       string(all),
+					Method: ctx.Request.Method,
+					//Body:       string(all),
 					HTTPMethod: ctx.Request.Method,
 					Path:       ctx.Request.URL.Path,
 				}
@@ -31,7 +28,7 @@ func (b Builder) Build() bee.Middleware {
 				if err == nil {
 					b.logFunc(string(bs))
 				}
-			}
+			}()
 			next(ctx)
 		}
 	}
