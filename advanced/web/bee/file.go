@@ -143,7 +143,7 @@ func (h *StaticResourceHandler) Handle() HandleFunc {
 			c.NotFoundErr("resource not found")
 			return
 		}
-		item, ok := h.readFromCache(filename)0
+		item, ok := h.readFromCache(filename)
 		if ok {
 			log.Println("hit cache")
 			h.writeCacheItem(item, c.Resp)
